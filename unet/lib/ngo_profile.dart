@@ -16,12 +16,70 @@ class NgoProfilePage extends StatefulWidget {
 
 class _NgoProfilePageState extends State<NgoProfilePage> {
   Map<String, dynamic>? ngoDetails;
+  Map<String, dynamic>? userDetails;
   bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
     fetchNgoDetails();
+    fetchUserDetails();
+  }
+
+  Future<void> fetchUserDetails() async {
+    final String apiUrl = 'http://10.0.2.2:8000/api/users/view-profile/'; // Replace with actual API URL
+    try {
+      // Get the stored JWT token from SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      String? token = prefs.getString('access_token'); // Retrieve the token
+      print("JWT Access Token: $token");
+
+      if (token == null) {
+        // Handle the case when the token is not available
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("User is not logged in")),
+        );
+        setState(() {
+          isLoading = false;
+        });
+        return;
+      }
+
+      // Make the API call with the token in the Authorization header
+      final response = await http.get(
+        Uri.parse(apiUrl),
+        headers: {
+          'Authorization': 'Bearer $token', // Add the JWT token here
+        },
+      );
+
+      if (response.statusCode == 200) {
+        // Decode and update the state with user details
+        setState(() {
+          userDetails = jsonDecode(response.body);
+          isLoading = false;
+        });
+        print(userDetails);
+      }
+      else {
+        print("Error Response: ${response.body} and ${response.statusCode}");
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Failed to fetch user details: ${response.body}")),
+        );
+        setState(() {
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      // Handle exceptions
+      print(e);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("An error occurred")),
+      );
+      setState(() {
+        isLoading = false;
+      });
+    }
   }
 
   Future<void> fetchNgoDetails() async {
@@ -57,6 +115,46 @@ class _NgoProfilePageState extends State<NgoProfilePage> {
     }
   }
 
+  Future<void> sendToBackend({
+    required String actionType, // "volunteer" or "donate"
+  }) async {
+    print("Sending request to backend with action: $actionType");
+    final url = 'http://10.0.2.2:8000/api/ngos/email/';
+
+    try {
+      // Check if userDetails and ngoDetails are available
+      if (userDetails == null || ngoDetails == null) {
+        showSnackBar("User or NGO details are missing.");
+        return;
+      }
+
+      // Prepare the payload
+      final payload = {
+        'user_name': userDetails?['name'],
+        'user_email': userDetails?['email'],
+        'ngo_name': ngoDetails?['name'],
+        'ngo_email': ngoDetails?['email'],
+        'action': actionType, // "volunteer" or "donate"
+      };
+
+      // Send POST request
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(payload),
+      );
+
+      if (response.statusCode == 200) {
+        showSnackBar("Email sent successfully to the NGO!");
+      } else {
+        showSnackBar("Failed to send email: ${response.body}");
+      }
+    } catch (e) {
+      showSnackBar("An error occurred: $e");
+    }
+  }
+
+
   void showSnackBar(String message) {
     ScaffoldMessenger.of(context)
         .showSnackBar(SnackBar(content: Text(message)));
@@ -64,54 +162,60 @@ class _NgoProfilePageState extends State<NgoProfilePage> {
 
   void showDonationDialog() {
     showDialog(
-        context: context,
-        builder: (BuildContext context) {
-      return AlertDialog(
-        title: const Text('Select Donation Type'),
-        content: Column(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Select Donation Type'),
+          content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-        ListTile(
-        title: const Text('Resources'),
-        onTap: () {
-          Navigator.of(context).pop();
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => DonationDetailsPage(
-                ngoId: widget.ngoId,
-                ngoEmail: ngoDetails?['email']??'N/A',
+              ListTile(
+                title: const Text('Resources'),
+                onTap: () async {
+                  Navigator.of(context).pop();
+
+                  // Trigger backend API for "donate -> resources"
+                  await sendToBackend(actionType: "donate");
+
+                  // Navigate to DonationDetailsPage
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => DonationDetailsPage(
+                        ngoId: widget.ngoId,
+                        ngoEmail: ngoDetails?['email'] ?? 'N/A',
+                      ),
+                    ),
+                  );
+                },
               ),
-            ),
-          );
-        },
-      ),
-    ListTile(
-    title: const Text('Money'),
-    onTap: () {
-    Navigator.of(context).pop();
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => RazorpayPaymentPage(
-          ngoId: widget.ngoId,
-        ),
-      ),
-    );
-    },
-    ),
+              ListTile(
+                title: const Text('Money'),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => RazorpayPaymentPage(
+                        ngoId: widget.ngoId,
+                      ),
+                    ),
+                  );
+                },
+              ),
             ],
-        ),
-        actions: [
-          TextButton(
-            child: const Text('Cancel'),
-            onPressed: () => Navigator.of(context).pop(),
           ),
-        ],
-      );
-        },
+          actions: [
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+          ],
+        );
+      },
     );
   }
+
 
 
   @override
@@ -269,19 +373,22 @@ class _NgoProfilePageState extends State<NgoProfilePage> {
           child: const Text('Donate', style: TextStyle(fontSize: 16)),
         ),
         ElevatedButton(
-          onPressed: () {
-            // Add Volunteer functionality here
+          onPressed: () async {
+            // Trigger backend API for "volunteer"
+            print("Volunteer button pressed");
+            await sendToBackend(actionType: "volunteer");
+            print("function called");
           },
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.teal,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20),
             ),
-            padding:
-            const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
           ),
           child: const Text('Volunteer', style: TextStyle(fontSize: 16)),
         ),
+
       ],
     );
   }
