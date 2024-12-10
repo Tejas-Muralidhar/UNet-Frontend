@@ -1,10 +1,10 @@
-
 import 'package:flutter/material.dart';
 import './signup.dart';
 import './main_page.dart';
 import './user_profile.dart';
 import './donations.dart';
 import './ngo_profile.dart';
+import './ngo_registration.dart'; // Import the NGO registration page
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -19,7 +19,7 @@ class MyApp extends StatelessWidget {
       home: LoginPage(),
       initialRoute: '/login',
       onGenerateRoute: (settings) {
-        // Handling the navigation for routes requiring arguments
+        // Handling navigation for routes requiring arguments
         if (settings.name == '/ngo_profile') {
           final args = settings.arguments as Map<String, dynamic>;
           return MaterialPageRoute(
@@ -33,6 +33,7 @@ class MyApp extends StatelessWidget {
         '/main': (context) => MainPage(),
         '/network': (context) => DonationsPage(),
         '/profile': (context) => ProfilePage(),
+        '/register_ngo': (context) => RegisterNGO(), // Route for NGO registration
       },
     );
   }
@@ -47,11 +48,6 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false;
-
-  //Store JWT
-  Future<void> storeToken(String token) async {
-
-  }
 
   // Function to handle login
   Future<void> _loginUser() async {
@@ -70,31 +66,23 @@ class _LoginPageState extends State<LoginPage> {
     });
 
     try {
-      // Replace this URL with your backend endpoint
       final response = await http.post(
-        Uri.parse('http://10.0.2.2:8000/api/users/login/'), // Update to your backend URL
+        Uri.parse('http://10.0.2.2:8000/api/users/login/'), // Update with your backend URL
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'email': email, 'password': password}),
       );
 
       if (response.statusCode == 200) {
-
         final responseData = jsonDecode(response.body);
-        final accesstoken = responseData['access_token'];  // Extract the token from response
-        final refreshtoken = responseData['refresh_token'];
-        print("ACCES TOKEN: $accesstoken");
-        print("REFRESH TOKEN: $refreshtoken");
-        // Store the token
-        if(accesstoken != Null && refreshtoken!=Null) {
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.remove('access_token');
-          await prefs.remove('refresh_token');
-          await prefs.remove('email');
-          await prefs.setString('access_token', accesstoken);
-          await prefs.setString('refresh_token', refreshtoken);
-          await prefs.setString('email', email);
+        final accessToken = responseData['access_token'];
+        final refreshToken = responseData['refresh_token'];
+        print("ACCESS TOKEN: $accessToken");
+        print("REFRESH TOKEN: $refreshToken");
 
-        }
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('access_token', accessToken);
+        await prefs.setString('refresh_token', refreshToken);
+        await prefs.setString('email', email);
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Login successful")),
@@ -214,13 +202,16 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 10.0),
-                    TextButton(
-                      onPressed: () {},
+                    const SizedBox(height: 20.0),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.pushNamed(context, '/register_ngo');
+                      },
                       child: const Text(
-                        'Forgot Password?',
+                        'Click here for NGO registration',
                         style: TextStyle(
                           color: Colors.teal,
+                          fontWeight: FontWeight.bold,
                           fontSize: 16.0,
                         ),
                       ),
@@ -256,4 +247,3 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 }
-

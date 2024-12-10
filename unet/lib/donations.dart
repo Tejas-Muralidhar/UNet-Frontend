@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:syncfusion_flutter_charts/charts.dart';
 
 void main() => runApp(MyApp());
 
@@ -11,6 +12,11 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       home: DonationsPage(),
+      routes: {
+        '/main': (context) => MyApp(), // Replace with your HomePage widget
+        '/network': (context) => Scaffold(body: Center(child: Text("Network Page"))),
+        '/profile': (context) => Scaffold(body: Center(child: Text("Profile Page"))),
+      },
     );
   }
 }
@@ -21,18 +27,17 @@ class DonationsPage extends StatefulWidget {
 }
 
 class _DonationsPageState extends State<DonationsPage> {
-  List<dynamic> donations = []; // List to hold donation data
-  bool isLoading = true; // Track loading state
+  List<dynamic> donations = [];
+  bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    fetchDonations(); // Fetch donations on page load
+    fetchDonations();
   }
 
   Future<void> fetchDonations() async {
     try {
-      // Get the user email from shared preferences
       SharedPreferences prefs = await SharedPreferences.getInstance();
       String? email = prefs.getString('email');
       String? token = prefs.getString('access_token');
@@ -41,21 +46,19 @@ class _DonationsPageState extends State<DonationsPage> {
         throw Exception("User email not found in shared preferences");
       }
 
-      // Make the API call
       final response = await http.post(
         Uri.parse("http://10.0.2.2:8000/api/donations/user_donations/"),
         headers: {
           'Content-Type': 'application/json',
-          'Authorization' : 'Bearer $token',
+          'Authorization': 'Bearer $token',
         },
         body: json.encode({'email': email}),
       );
 
       if (response.statusCode == 200) {
-        // Decode the JSON response and set donations
         final data = json.decode(response.body);
         setState(() {
-          donations = data['donations']; // Assuming the response contains a 'donations' array
+          donations = data['donations'];
           isLoading = false;
         });
       } else {
@@ -67,6 +70,39 @@ class _DonationsPageState extends State<DonationsPage> {
         isLoading = false;
       });
     }
+  }
+
+  void showGraph(BuildContext context) {
+    if (donations.isEmpty) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text("No Donations"),
+          content: const Text("You have not donated to any NGOs yet."),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("OK"),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    final data = donations.map((donation) {
+      return DonationData(
+        donation['ngo_name'] ?? "N/A",
+        double.tryParse(donation['amount'].toString()) ?? 0.0,
+      );
+    }).toList();
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => GraphPage(data: data),
+      ),
+    );
   }
 
   @override
@@ -100,6 +136,11 @@ class _DonationsPageState extends State<DonationsPage> {
           },
         ),
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => showGraph(context),
+        child: const Icon(Icons.bar_chart),
+        backgroundColor: Colors.teal,
+      ),
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
@@ -131,7 +172,6 @@ class _DonationsPageState extends State<DonationsPage> {
   }
 }
 
-// Widget for individual donation card
 class DonationCard extends StatelessWidget {
   final String organization;
   final String donation;
@@ -156,7 +196,7 @@ class DonationCard extends StatelessWidget {
               color: Colors.grey.withOpacity(0.5),
               spreadRadius: 5,
               blurRadius: 7,
-              offset: Offset(0, 3), // changes position of shadow
+              offset: const Offset(0, 3),
             ),
           ],
         ),
@@ -192,11 +232,49 @@ class DonationCard extends StatelessWidget {
               ],
             ),
           ],
-
         ),
-
       ),
+    );
+  }
+}
 
+class DonationData {
+  final String ngoName;
+  final double amount;
+
+  DonationData(this.ngoName, this.amount);
+}
+
+class GraphPage extends StatelessWidget {
+  final List<DonationData> data;
+
+  GraphPage({required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Donation Graph'),
+        backgroundColor: Colors.teal,
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: SfCartesianChart(
+          primaryXAxis: CategoryAxis(),
+          title: ChartTitle(text: 'NGOs vs Donations'),
+          legend: Legend(isVisible: false),
+          tooltipBehavior: TooltipBehavior(enable: true),
+          series: <ChartSeries>[
+            ColumnSeries<DonationData, String>(
+              dataSource: data,
+              xValueMapper: (DonationData donation, _) => donation.ngoName,
+              yValueMapper: (DonationData donation, _) => donation.amount,
+              color: Colors.teal,
+              dataLabelSettings: DataLabelSettings(isVisible: true),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
