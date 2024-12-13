@@ -178,7 +178,7 @@ class _NgoProfilePageState extends State<NgoProfilePage> {
                   await sendToBackend(actionType: "donate");
 
                   // Navigate to DonationDetailsPage
-                  Navigator.push(
+                  Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
                       builder: (context) => DonationDetailsPage(
@@ -193,7 +193,7 @@ class _NgoProfilePageState extends State<NgoProfilePage> {
                 title: const Text('Money'),
                 onTap: () {
                   Navigator.of(context).pop();
-                  Navigator.push(
+                  Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
                       builder: (context) => RazorpayPaymentPage(

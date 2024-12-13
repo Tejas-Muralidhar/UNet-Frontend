@@ -184,9 +184,9 @@ class _RazorpayPaymentPageState extends State<RazorpayPaymentPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white, // Soft mint color background
+      backgroundColor: Colors.teal[100], // Soft mint color background
       appBar: AppBar(
-        backgroundColor: Colors.teal[100], // Green color for AppBar
+        backgroundColor: Colors.teal[500], // Green color for AppBar
         title: Text('Payment', style: TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
       ),
@@ -195,7 +195,7 @@ class _RazorpayPaymentPageState extends State<RazorpayPaymentPage> {
           child: Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Colors.teal[50],
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
@@ -224,7 +224,7 @@ class _RazorpayPaymentPageState extends State<RazorpayPaymentPage> {
                           borderSide: BorderSide(color: Colors.teal[100]!, width: 2),
                         ),
                         filled: true,
-                        fillColor: Color(0xFFF1F8E9),
+                        fillColor: Colors.white,
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
@@ -247,7 +247,7 @@ class _RazorpayPaymentPageState extends State<RazorpayPaymentPage> {
                           borderSide: BorderSide(color: Colors.teal[100]!, width: 2),
                         ),
                         filled: true,
-                        fillColor: Color(0xFFF1F8E9),
+                        fillColor: Colors.white,
                       ),
                       keyboardType: TextInputType.number,
                       validator: (value) {
@@ -271,7 +271,7 @@ class _RazorpayPaymentPageState extends State<RazorpayPaymentPage> {
                           borderSide: BorderSide(color: Colors.teal[100]!, width: 2),
                         ),
                         filled: true,
-                        fillColor: Color(0xFFF1F8E9),
+                        fillColor: Colors.white,
                       ),
                       keyboardType: TextInputType.number,
                       obscureText: true,
@@ -296,7 +296,7 @@ class _RazorpayPaymentPageState extends State<RazorpayPaymentPage> {
                           borderSide: BorderSide(color: Colors.teal[100]!, width: 2),
                         ),
                         filled: true,
-                        fillColor: Color(0xFFF1F8E9),
+                        fillColor: Colors.white,
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty || value.length != 5) {
@@ -319,7 +319,7 @@ class _RazorpayPaymentPageState extends State<RazorpayPaymentPage> {
                           borderSide: BorderSide(color: Colors.teal[100]!, width: 2),
                         ),
                         filled: true,
-                        fillColor: Color(0xFFF1F8E9),
+                        fillColor: Colors.white,
                       ),
                       keyboardType: TextInputType.number,
                       validator: (value) {
@@ -354,7 +354,7 @@ class _RazorpayPaymentPageState extends State<RazorpayPaymentPage> {
                     padding: const EdgeInsets.only(top: 20.0),
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.teal[100], // Green button color
+                        backgroundColor: Colors.teal[500], // Green button color
                         padding: EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -374,7 +374,7 @@ class _RazorpayPaymentPageState extends State<RazorpayPaymentPage> {
                       },
                       child: Text(
                         'Donate',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        style: TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold),
                       ),
                     ),
                   ),

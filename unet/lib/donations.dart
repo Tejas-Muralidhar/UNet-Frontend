@@ -14,8 +14,10 @@ class MyApp extends StatelessWidget {
       home: DonationsPage(),
       routes: {
         '/main': (context) => MyApp(), // Replace with your HomePage widget
-        '/network': (context) => Scaffold(body: Center(child: Text("Network Page"))),
-        '/profile': (context) => Scaffold(body: Center(child: Text("Profile Page"))),
+        '/network': (context) =>
+            Scaffold(body: Center(child: Text("Network Page"))),
+        '/profile': (context) =>
+            Scaffold(body: Center(child: Text("Profile Page"))),
       },
     );
   }
@@ -92,8 +94,8 @@ class _DonationsPageState extends State<DonationsPage> {
 
     final data = donations.map((donation) {
       return DonationData(
-        donation['ngo_name'] ?? "N/A",
-        double.tryParse(donation['amount'].toString()) ?? 0.0,
+        ngoName: donation['ngo_name'] ?? "N/A",
+        amount: double.tryParse(donation['amount'].toString()) ?? 0.0,
       );
     }).toList();
 
@@ -130,7 +132,7 @@ class _DonationsPageState extends State<DonationsPage> {
             final donation = donations[index];
             return DonationCard(
               organization: donation['ngo_name'] ?? 'N/A',
-              donation: donation['amount'] ?? 'N/A',
+              donation: donation['amount']?.toString() ?? 'N/A',
               date: donation['date'] ?? 'N/A',
             );
           },
@@ -177,7 +179,7 @@ class DonationCard extends StatelessWidget {
   final String donation;
   final String date;
 
-  DonationCard({
+  const DonationCard({
     required this.organization,
     required this.donation,
     required this.date,
@@ -242,16 +244,18 @@ class DonationData {
   final String ngoName;
   final double amount;
 
-  DonationData(this.ngoName, this.amount);
+  DonationData({required this.ngoName, required this.amount});
 }
 
 class GraphPage extends StatelessWidget {
   final List<DonationData> data;
 
-  GraphPage({required this.data});
+  const GraphPage({required this.data});
 
   @override
   Widget build(BuildContext context) {
+    final aggregatedData = _aggregateDonationsByNGO(data);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Donation Graph'),
@@ -262,19 +266,31 @@ class GraphPage extends StatelessWidget {
         child: SfCartesianChart(
           primaryXAxis: CategoryAxis(),
           title: ChartTitle(text: 'NGOs vs Donations'),
-          legend: Legend(isVisible: false),
           tooltipBehavior: TooltipBehavior(enable: true),
           series: <ChartSeries>[
             ColumnSeries<DonationData, String>(
-              dataSource: data,
+              dataSource: aggregatedData,
               xValueMapper: (DonationData donation, _) => donation.ngoName,
               yValueMapper: (DonationData donation, _) => donation.amount,
               color: Colors.teal,
-              dataLabelSettings: DataLabelSettings(isVisible: true),
+              dataLabelSettings: const DataLabelSettings(isVisible: true),
             ),
           ],
         ),
       ),
     );
+  }
+
+  List<DonationData> _aggregateDonationsByNGO(List<DonationData> data) {
+    final Map<String, double> aggregatedMap = {};
+
+    for (var donation in data) {
+      aggregatedMap.update(donation.ngoName, (value) => value + donation.amount,
+          ifAbsent: () => donation.amount);
+    }
+
+    return aggregatedMap.entries
+        .map((entry) => DonationData(ngoName: entry.key, amount: entry.value))
+        .toList();
   }
 }

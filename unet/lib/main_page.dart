@@ -168,6 +168,7 @@ class _MainPageState extends State<MainPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xffd0fff4),
       appBar: AppBar(
         title: Text('NGO Recommendations'),
         backgroundColor: Colors.teal[500],
@@ -175,7 +176,7 @@ class _MainPageState extends State<MainPage> {
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.all(8.0),
+            padding: const EdgeInsets.all(15.0),
             child: TextField(
               controller: searchController,
               decoration: InputDecoration(
@@ -192,7 +193,7 @@ class _MainPageState extends State<MainPage> {
             child: isLoading
                 ? Center(child: CircularProgressIndicator())
                 : Padding(
-              padding: const EdgeInsets.all(8.0),
+              padding: const EdgeInsets.all(4.0),
               child: GridView.builder(
                 controller: _scrollController,
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -206,27 +207,46 @@ class _MainPageState extends State<MainPage> {
                   final ngo = displayedNgos[index];
                   return GestureDetector(
                     onTap: () {
-                      Navigator.pushReplacement(
+                      Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) =>
-                              NgoProfilePage(ngoId: ngo['id']),
+                          builder: (context) => NgoProfilePage(ngoId: ngo['id']),
                         ),
                       );
                     },
-                    child: Container(
+                    child: AnimatedContainer(
+                      duration: Duration(milliseconds: 300),
+                      margin: EdgeInsets.symmetric(vertical: 5, horizontal: 5),
                       decoration: BoxDecoration(
-                        color: Colors.teal[100],
-                        borderRadius: BorderRadius.circular(10),
+                        color: Colors.teal[400], // Solid teal green color
+                        borderRadius: BorderRadius.circular(25),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black45,
+                            offset: Offset(0, 10),
+                            blurRadius: 15,
+                          ),
+                        ],
                       ),
-                      child: Center(
-                        child: Text(
-                          ngo['name'],
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.teal[800],
+                      child: Padding(
+                        padding: const EdgeInsets.all(10.0),
+                        child: Center(
+                          child: Text(
+                            ngo['name'],
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 19, // Larger font size for emphasis
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                              letterSpacing: 1,
+                              shadows: [
+                                Shadow(
+                                  color: Colors.black.withOpacity(0.5),
+                                  offset: Offset(2, 2),
+                                  blurRadius: 10,
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
